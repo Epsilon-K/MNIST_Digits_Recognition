@@ -5,6 +5,7 @@
 class NeuralNetwork
 {
 public:
+    QString name;
     QVector<int> structure;
     QVector<Matrix> weights;
     QVector<Matrix> biases;
