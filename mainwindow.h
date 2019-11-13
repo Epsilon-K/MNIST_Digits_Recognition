@@ -19,23 +19,25 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void loadDataSet(QString path, QByteArray &byteArray, int offset);
+    void loadDataSet(QString path, QVector<Matrix> &vm, int offset);
 
 public slots:
-    void viewImage(QByteArray & ba, int imgIndex, QLabel * label);
-    void setImageLabel(QByteArray & ba, int ind, QLabel *label);
+    void viewImage(QVector<Matrix> vm, int imgIndex, QLabel *label);
+    void setImageLabel(QVector<Matrix> ba, int ind, QLabel *label);
 
 
 private slots:
-    void on_trainImagSeekSlider_actionTriggered(int action);
+    void on_trainImagSeekSlider_valueChanged(int value);
+
+    void on_testImgSeekSlider_valueChanged(int value);
 
 private:
     Ui::MainWindow *ui;
     NeuralNetwork *brain;
-    QByteArray trainingImages;
-    QByteArray trainingLabels;
-    QByteArray testingImages;
-    QByteArray testingLabels;
+    QVector<Matrix> trainingImages;
+    QVector<Matrix> trainingLabels;
+    QVector<Matrix> testingImages;
+    QVector<Matrix> testingLabels;
 };
 
 #endif // MAINWINDOW_H

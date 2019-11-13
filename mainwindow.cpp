@@ -15,9 +15,8 @@ MainWindow::MainWindow(QWidget *parent) :
     loadDataSet(":/dataset/t10k-images.idx3-ubyte", testingImages, 16);
 
     // view 1st Training Image & 1st Testing Image
-    on_trainImagSeekSlider_actionTriggered(0);
-    viewImage(testingImages, 0, ui->testingImagesLabel);
-    setImageLabel(testingLabels, 0, ui->testImgLabel);
+    on_trainImagSeekSlider_valueChanged(0);
+    on_testImgSeekSlider_valueChanged(0);
 }
 
 MainWindow::~MainWindow()
@@ -25,7 +24,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::loadDataSet(QString path, QByteArray &byteArray, int offset)
+void MainWindow::loadDataSet(QString path, QVector<Matrix> & vm, int offset)
 {
     QFile file(path);
       if (!file.open(QIODevice::ReadOnly)){
@@ -33,19 +32,34 @@ void MainWindow::loadDataSet(QString path, QByteArray &byteArray, int offset)
           return;
       }
 
-        byteArray = file.readAll();
-        byteArray.remove(0,offset);
+    QByteArray *ba = new QByteArray(file.readAll());
+    ba->remove(0,offset);
+    if(offset == 16){ // loading an images file
+        for(int i = 0; i < ba->size()/784; i++){    // number of images
+            QVector<double> v;
+            for(int j = 0; j < 784; j++){
+                v.append(uchar(ba->at(i*784 + j)));
+            }
+            Matrix m(v);
+            vm.append(m);
+        }
+    }else{  // loading the labels
+        for(int i = 0; i < ba->size(); i++){
+            QVector<double> v;
+            v.append(uchar(ba->at(i)));
+            Matrix m(v);
+            vm.append(v);
+        }
+    }
 }
 
-void MainWindow::viewImage(QByteArray &ba, int imgIndex, QLabel *label)
+void MainWindow::viewImage(QVector<Matrix> vm, int imgIndex, QLabel *label)
 {
     // create uchar array
     uchar data[784];
-    int startInd = imgIndex * 784;
-    int finishInd = startInd + 784;
 
-    for(int i = startInd; i < finishInd; i++){
-        data[i] = uchar(ba.data()[i]);
+    for(int i = 0; i < 784; i++){
+        data[i] = uchar(vm[imgIndex][i][0]);
     }
 
     // create QImage & QPixmap
@@ -56,18 +70,21 @@ void MainWindow::viewImage(QByteArray &ba, int imgIndex, QLabel *label)
     label->setPixmap(pix.scaled(28*5,28*5));
 }
 
-void MainWindow::setImageLabel(QByteArray &ba, int ind, QLabel *label)
+void MainWindow::setImageLabel(QVector<Matrix> vm, int ind, QLabel *label)
 {
     QString str = "image[" + QString::number(ind) + "] Label : ";
-    str += QString::number(uchar(ba.at(ind)));
+    str += QString::number(uchar(vm[ind].data[0][0]));
     label->setText(str);
 }
 
-void MainWindow::on_trainImagSeekSlider_actionTriggered(int action)
+void MainWindow::on_trainImagSeekSlider_valueChanged(int value)
 {
-    qDebug() << "Gonna Seek to " << QString::number(action);
-    viewImage(trainingImages, action, ui->traingingImagesLabel);
-    qDebug() << "Viewed Image!";
-    setImageLabel(trainingLabels, action, ui->trainImgLabel);
-    qDebug() << "Set the Label";
+    viewImage(trainingImages, value, ui->traingingImagesLabel);
+    setImageLabel(trainingLabels, value, ui->trainImgLabel);
+}
+
+void MainWindow::on_testImgSeekSlider_valueChanged(int value)
+{
+    viewImage(testingImages, value, ui->testingImagesLabel);
+    setImageLabel(testingLabels, value, ui->testImgLabel);
 }

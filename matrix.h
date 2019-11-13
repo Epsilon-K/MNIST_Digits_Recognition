@@ -15,6 +15,12 @@ public:
         return data.at(0).size();
     }
 
+
+    QVector<double> operator[](int i){
+        return data[i];
+    }
+
+
     Matrix(int rows, int cols){
         for(int i = 0; i < rows; i++){
             QVector<double> v;
