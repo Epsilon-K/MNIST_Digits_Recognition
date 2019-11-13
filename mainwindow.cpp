@@ -24,7 +24,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::loadDataSet(QString path, QVector<Matrix> & vm, int offset)
+void MainWindow::loadDataSet(QString path, QVector<Matrix *> &vm, int offset)
 {
     QFile file(path);
       if (!file.open(QIODevice::ReadOnly)){
@@ -40,26 +40,26 @@ void MainWindow::loadDataSet(QString path, QVector<Matrix> & vm, int offset)
             for(int j = 0; j < 784; j++){
                 v.append(uchar(ba->at(i*784 + j)));
             }
-            Matrix m(v);
+            Matrix *m = new Matrix(v);
             vm.append(m);
         }
     }else{  // loading the labels
         for(int i = 0; i < ba->size(); i++){
             QVector<double> v;
             v.append(uchar(ba->at(i)));
-            Matrix m(v);
-            vm.append(v);
+            Matrix *m = new Matrix(v);
+            vm.append(m);
         }
     }
 }
 
-void MainWindow::viewImage(QVector<Matrix> vm, int imgIndex, QLabel *label)
+void MainWindow::viewImage(QVector<Matrix *> vm, int imgIndex, QLabel *label)
 {
     // create uchar array
     uchar data[784];
 
     for(int i = 0; i < 784; i++){
-        data[i] = uchar(vm[imgIndex][i][0]);
+        data[i] = uchar(vm[imgIndex]->data.at(i).at(0));
     }
 
     // create QImage & QPixmap
@@ -70,10 +70,10 @@ void MainWindow::viewImage(QVector<Matrix> vm, int imgIndex, QLabel *label)
     label->setPixmap(pix.scaled(28*5,28*5));
 }
 
-void MainWindow::setImageLabel(QVector<Matrix> vm, int ind, QLabel *label)
+void MainWindow::setImageLabel(QVector<Matrix *> vm, int ind, QLabel *label)
 {
     QString str = "image[" + QString::number(ind) + "] Label : ";
-    str += QString::number(uchar(vm[ind].data[0][0]));
+    str += QString::number(uchar(vm[ind]->data.at(0).at(0)));
     label->setText(str);
 }
 

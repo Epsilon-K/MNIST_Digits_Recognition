@@ -2,91 +2,153 @@
 #define NN_H
 #include <matrix.h>
 
-class NeuralNetwork
+class NeuralNetwork : public QObject
 {
+    Q_OBJECT
 public:
     QString name;
     QVector<int> structure;
-    QVector<Matrix> weights;
-    QVector<Matrix> biases;
-    QVector<Matrix> layers;
-    QVector<Matrix> errors;
+    QVector<Matrix*> weights;
+    QVector<Matrix*> biases;
+    QVector<Matrix*> layers;
+    QVector<Matrix*> errors;
+
+    QVector<Matrix*> deltas;
+    QVector<Matrix*> gradients;
 
     double learningRate = 0.05;
+    int batchSize = 100;
+    int epochs = 1;
 
-    NeuralNetwork(QVector<int> _structure) {
+
+    NeuralNetwork(QString _name, QVector<int> _structure, int _batchSize = 100, int _epochs = 1,
+                  double _learningRate = 0.05) {
+        name = _name;
         structure = _structure;
+        batchSize = _batchSize <= 0 ? 1 : _batchSize;
+        epochs = _epochs;  learningRate = _learningRate;
+
         // create the layers
         for(int i = 0; i < structure.size(); i++){
-            Matrix m(structure[i], 1);
+            Matrix *m = new Matrix(structure[i], 1);
             layers.append(m);
         }
-        // create weights, biases And errors
+        // create weights, biases, errors, deltas, and gradients
         for(int i = 1; i < structure.size(); i++){
-            Matrix weight(structure[i], structure[i-1]);
-            weight.randomize();
+            Matrix *weight = new Matrix(structure[i], structure[i-1]);
+            weight->randomize();
             weights.append(weight);
 
-            Matrix bias(structure[i], 1);
-            bias.add(1); // or just zeros???
+            Matrix *bias = new Matrix(structure[i], 1);
             biases.append(bias);
 
-            Matrix err(structure[i], 1);
+            Matrix *err = new Matrix(structure[i], 1);
             errors.append(err);
-        }
 
+
+            Matrix *gradient = new Matrix(structure[i], 1);
+            gradients.append(gradient);
+
+            Matrix *delta = new Matrix(structure[i], structure[i-1]);
+            deltas.append(delta);
+        }
     }
 
-    Matrix feedForward(Matrix inputs){
-        layers[0].copy(inputs);
+    Matrix* feedForward(Matrix *inputs){
+        layers[0]->copy(inputs);
         for(int i = 0; i < weights.size(); i++){
-            layers[i+1].copy(Matrix::dotProduct(weights[i], layers[i]));
-            layers[i+1].add(biases[i]);
+            layers[i+1]->copy(Matrix::dotProduct(weights[i], layers[i]));
+            layers[i+1]->add(biases[i]);
             // activation
-            layers[i+1].map(Matrix::sigmoid);
+            layers[i+1]->map(Matrix::sigmoid);
         }
         return layers[layers.size()-1];
     }
 
-    Matrix backPropagation(Matrix inputs, Matrix targets){
-        Matrix outputs = this->feedForward(inputs);
+    Matrix backPropagation(Matrix *inputs, Matrix *targets){
+        Matrix *outputs = this->feedForward(inputs);
 
         // Calculate error for output layer
         errors[errors.size()-1] = Matrix::subtract(targets, outputs);
-        Matrix gradient(outputs);
+        Matrix *gradient = new Matrix(outputs);
 
         //Calculate Gradient
-        gradient.map(Matrix::dSigmoid);
-        gradient.multiply(errors[errors.size()-1]);
-        gradient.multiply(learningRate);
+        gradient->map(Matrix::dSigmoid);
+        gradient->multiply(errors[errors.size()-1]);
+        gradient->multiply(learningRate);
+
+        gradients[gradients.size()-1]->add(gradient);
 
         //Calculate Delta
-        Matrix lt(Matrix::transpose(layers[layers.size()-2]));
-        Matrix delta(Matrix::dotProduct(gradient,lt));
+        Matrix *lt = Matrix::transpose(layers[layers.size()-2]);
+        Matrix *delta = Matrix::dotProduct(gradient,lt);
+
+        deltas[deltas.size()-1]->add(delta);
 
         //Apply the change to weight
-        weights[weights.size()-1].add(delta);
-        biases[biases.size()-1].add(gradient);
+        //weights[weights.size()-1]->add(delta);
+        //biases[biases.size()-1]->add(gradient);
 
         // Calculate Errors
         for(int i = errors.size()-2; i >= 0; i--){
             //err
-            Matrix wt(Matrix::transpose(weights[i+1]));
-            errors[i].copy(Matrix::dotProduct(wt,errors[i+1]));
+            Matrix *wt = Matrix::transpose(weights[i+1]);
+            errors[i]->copy(Matrix::dotProduct(wt,errors[i+1]));
             //Gradient
-            Matrix lGradient(layers[i+1]);
-            lGradient.map(Matrix::dSigmoid);
-            lGradient.multiply(errors[i]);
-            lGradient.multiply(learningRate);
+            Matrix *lGradient = new Matrix(layers[i+1]);
+            lGradient->map(Matrix::dSigmoid);
+            lGradient->multiply(errors[i]);
+            lGradient->multiply(learningRate);
             //delta
-            Matrix tr(Matrix::transpose(layers[i]));
-            Matrix lDelta(Matrix::dotProduct(lGradient, tr));
+            Matrix *tr = Matrix::transpose(layers[i]);
+            Matrix *lDelta = Matrix::dotProduct(lGradient, tr);
 
-            // Apply delta to the weights
-            weights[i].add(lDelta);
-            biases[i].add(lGradient);
+            gradients[i]->add(lGradient);
+            deltas[i]->add(lDelta);
         }
         return outputs;
+    }
+
+    void training(QVector<Matrix*> inputs, QVector<Matrix*> targets){
+        //01 Run the epoch loop
+        for(int epoch = 0; epoch < epochs; epoch++){
+            //02 Random Shuffle the data
+            shuffleVector(inputs);
+
+            //03 Batch Loop
+            int dataIndex = 0;
+            while(dataIndex < inputs.size()){
+                for(int batch = 0; (batch < batchSize && dataIndex < inputs.size())
+                    ; batch++){
+                    //04 backpropgation
+                    backPropagation(inputs[dataIndex], targets[dataIndex]);
+                    dataIndex++;
+                }
+
+                for(int i = 0; i < weights.size(); i++){
+                    //05 divide the already summed gradients
+                    //   and deltas by batchSize to get Average
+                    gradients[i]->divide(batchSize);
+                    deltas[i]->divide(batchSize);
+
+                    //06 Adjust weights and biases
+                    biases[i]->add(gradients[i]);
+                    weights[i]->add(deltas[i]);
+                }
+            }
+            //07 report cost function after epoch[epoch]
+            // TODO!!!
+        }
+    }
+
+
+    void shuffleVector(QVector<Matrix *> &vec){
+        for(int i = 0; i < vec.size(); i++){
+            int r = rand()%vec.size();
+            Matrix * t = vec.at(i);
+            vec[i] = vec.at(r);
+            vec[r] = t;
+        }
     }
 };
 
