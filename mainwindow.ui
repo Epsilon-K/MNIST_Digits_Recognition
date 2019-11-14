@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>641</width>
-    <height>530</height>
+    <height>559</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Model : </string>
+           <string>Model : undefined</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -160,7 +160,14 @@
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_4">
                <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="10,0">
+                <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,10,0">
+                 <item>
+                  <widget class="QLabel" name="label_10">
+                   <property name="text">
+                    <string>Model Name : </string>
+                   </property>
+                  </widget>
+                 </item>
                  <item>
                   <widget class="QLineEdit" name="modelNameLineEdit">
                    <property name="placeholderText">
@@ -188,6 +195,9 @@
                  </item>
                  <item>
                   <widget class="QLineEdit" name="nnStructLineEdit">
+                   <property name="text">
+                    <string>784, 16, 16, 10</string>
+                   </property>
                    <property name="placeholderText">
                     <string>eg: &quot;784, 16, 16, 10&quot;</string>
                    </property>
@@ -341,7 +351,7 @@
            </layout>
           </widget>
           <widget class="QWidget" name="layoutWidget_2">
-           <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0,0,0">
+           <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0,0,0,0">
             <item>
              <widget class="QLabel" name="testImgLabel">
               <property name="font">
@@ -427,6 +437,26 @@
                </spacer>
               </item>
               <item>
+               <widget class="QLabel" name="label_9">
+                <property name="text">
+                 <string>loop wait (ms) :</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="testWaitingSpinBox">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+                <property name="value">
+                 <number>5</number>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QPushButton" name="testNNBtn">
                 <property name="text">
                  <string>Test Neural Network</string>
@@ -465,6 +495,21 @@
                </widget>
               </item>
              </layout>
+            </item>
+            <item>
+             <widget class="QLabel" name="testAccLabel">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Accuracy : </string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
             </item>
             <item>
              <spacer name="verticalSpacer_2">

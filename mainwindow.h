@@ -25,6 +25,10 @@ public slots:
     void viewImage(QVector<Matrix*> vm, int imgIndex, QLabel *label);
     void setImageLabel(QVector<Matrix*> ba, int ind, QLabel *label);
     void loadStyle();
+    void loadData();
+    QString setNNFullName();
+    void feedImage();
+    QString getRandomName(int len);
 
 
 private slots:
@@ -32,7 +36,10 @@ private slots:
 
     void on_testImgSeekSlider_valueChanged(int value);
 
-    void loadData();
+    void on_testNNBtn_clicked();
+
+    void on_saveModelBtn_clicked();
+
 
 private:
     Ui::MainWindow *ui;
@@ -42,6 +49,9 @@ private:
     QVector<Matrix*> testingImages;
     QVector<Matrix*> testingLabels;
     double load = 0;
+
+    int testIndex = 0;
+    int correctTests = 0;
 };
 
 #endif // MAINWINDOW_H

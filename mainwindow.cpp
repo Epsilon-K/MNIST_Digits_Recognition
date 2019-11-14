@@ -10,8 +10,10 @@ MainWindow::MainWindow(QWidget *parent) :
     showMaximized();
     srand(time(0));
 
+    ui->modelNameLineEdit->setText(getRandomName(3));
 
-    QTimer::singleShot(200,this,SLOT(loadData()));
+
+    QTimer::singleShot(100,this,SLOT(loadData()));
 }
 
 MainWindow::~MainWindow()
@@ -117,3 +119,80 @@ void MainWindow::loadData()
     on_testImgSeekSlider_valueChanged(0);
 }
 
+
+void MainWindow::on_testNNBtn_clicked()
+{
+    if(ui->modelLabel->text() != "Model : undefined"){
+        testIndex = 0;
+        correctTests = 0;
+        QTimer::singleShot(ui->testWaitingSpinBox->value(),this,SLOT(feedImage()));
+    }else{
+        ui->logPTE->appendPlainText("Warning : No Neural Network Model Configured!");
+        ui->logPTE->appendPlainText("          Save or load a model first.");
+    }
+}
+
+void MainWindow::on_saveModelBtn_clicked()
+{
+    QString name = ui->modelNameLineEdit->text();
+    QVector<int> structure;
+    QStringList ls = ui->nnStructLineEdit->text().split(", ",QString::SkipEmptyParts);
+    for(int i = 0; i < ls.size(); i++) structure.append(ls[i].toInt());
+
+
+    brain = new NeuralNetwork(name, structure, ui->batchSizeSpinBox->value(),
+                              ui->epochsSpinBox->value(),
+                              ui->lrSpinBox->value());
+    setNNFullName();
+}
+
+QString MainWindow::setNNFullName()
+{
+    QString str = brain->name;
+    str += " NN{";
+    for(int i = 0; i < brain->structure.size(); i++){
+        str += QString::number(brain->structure[i]);
+        if(i < brain->structure.size()-1) str += ", ";
+    }
+    str += "} ";
+    str += "Batch(" + QString::number(brain->batchSize) + ") ";
+    str += "Epochs(" + QString::number(brain->epochs) + ") ";
+    str += "LR(" + QString::number(brain->learningRate) + ")";
+    ui->modelLabel->setText(str);
+    return str;
+}
+
+void MainWindow::feedImage()
+{
+    ui->testImgSeekSlider->setValue(testIndex);
+    Matrix * output(brain->feedForward(testingImages[testIndex]));
+
+    int guess = 0;
+    for(int i = 0; i < output->data.size(); i++){
+        if(output->data[guess][0] < output->data[i][0]) guess = i;
+    }
+    ui->testGuessLabel->setText("Guess : " + QString::number(guess));
+
+    if(guess == testingLabels[testIndex]->data.indexOf({1})){
+        correctTests++;
+    }
+    double acc = double(correctTests)/testingLabels.size() * 100;
+    ui->testAccLabel->setText("Accuracy : " + QString::number(acc) + "%  [" +
+                              QString::number(correctTests) + "/" +
+                              QString::number(testingLabels.size()) + "]");
+
+    ui->testingProgressBar->setValue(int(double(testIndex)/(testingImages.size()-1) * 100));
+    if(testIndex < testingImages.size()-1){
+        testIndex++;
+        QTimer::singleShot(ui->testWaitingSpinBox->value(),this,SLOT(feedImage()));
+    }
+}
+
+QString MainWindow::getRandomName(int len)
+{
+    QString str;
+    for(int i = 0; i < len; i++){
+        str += char(rand()%26 + 65);
+    }
+    return  str;
+}
