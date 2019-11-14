@@ -223,7 +223,7 @@
                     <number>999999999</number>
                    </property>
                    <property name="value">
-                    <number>50</number>
+                    <number>10</number>
                    </property>
                   </widget>
                  </item>
@@ -247,7 +247,7 @@
                     <number>100</number>
                    </property>
                    <property name="value">
-                    <number>3</number>
+                    <number>1</number>
                    </property>
                   </widget>
                  </item>
@@ -316,6 +316,19 @@
                </widget>
               </item>
               <item>
+               <widget class="QSpinBox" name="trainWaitSpinBox">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+                <property name="value">
+                 <number>3</number>
+                </property>
+               </widget>
+              </item>
+              <item>
                <spacer name="horizontalSpacer_2">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
@@ -347,6 +360,21 @@
                </widget>
               </item>
              </layout>
+            </item>
+            <item>
+             <widget class="QLabel" name="trainAccLabel">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Accuracy : </string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

@@ -65,7 +65,7 @@ public:
         return layers[layers.size()-1];
     }
 
-    Matrix backPropagation(Matrix *inputs, Matrix *targets){
+    Matrix* backPropagation(Matrix *inputs, Matrix *targets){
         Matrix *outputs = this->feedForward(inputs);
 
         // Calculate error for output layer
@@ -109,11 +109,11 @@ public:
         return outputs;
     }
 
-    void training(QVector<Matrix*> inputs, QVector<Matrix*> targets){
+    /*void training(QVector<Matrix*> inputs, QVector<Matrix*> targets){
         //01 Run the epoch loop
         for(int epoch = 0; epoch < epochs; epoch++){
             //02 Random Shuffle the data
-            shuffleVector(inputs);
+            shuffleVector(inputs, targets);
 
             //03 Batch Loop
             int dataIndex = 0;
@@ -140,14 +140,19 @@ public:
             // TODO!!!
         }
     }
+    */
 
-
-    void shuffleVector(QVector<Matrix *> &vec){
+    void shuffleVector(QVector<Matrix *> &vec, QVector<Matrix *> &vec2){
         for(int i = 0; i < vec.size(); i++){
             int r = rand()%vec.size();
+
             Matrix * t = vec.at(i);
             vec[i] = vec.at(r);
             vec[r] = t;
+
+            Matrix * t2 = vec2.at(i);
+            vec2[i] = vec2.at(r);
+            vec2[r] = t2;
         }
     }
 };

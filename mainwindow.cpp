@@ -177,7 +177,7 @@ void MainWindow::feedImage()
         correctTests++;
     }
     double acc = double(correctTests)/testingLabels.size() * 100;
-    ui->testAccLabel->setText("Accuracy : " + QString::number(acc) + "%  [" +
+    ui->testAccLabel->setText("Testing Accuracy : " + QString::number(acc) + "%  [" +
                               QString::number(correctTests) + "/" +
                               QString::number(testingLabels.size()) + "]");
 
@@ -185,6 +185,78 @@ void MainWindow::feedImage()
     if(testIndex < testingImages.size()-1){
         testIndex++;
         QTimer::singleShot(ui->testWaitingSpinBox->value(),this,SLOT(feedImage()));
+    }else{
+        ui->logPTE->appendPlainText(ui->testAccLabel->text());
+    }
+}
+
+void MainWindow::on_startTrainingBtn_clicked()
+{
+    if(ui->modelLabel->text() != "Model : undefined"){
+        epochIndex = 0;
+        batchIndex = 0;
+        trainIndex = 0;
+        correctTests = 0;
+        brain->shuffleVector(trainingImages, trainingLabels);
+        QTimer::singleShot(ui->trainWaitSpinBox->value(),this,SLOT(train()));
+    }else{
+        ui->logPTE->appendPlainText("Warning : No Neural Network Model Configured!");
+        ui->logPTE->appendPlainText("          Save or load a model first.");
+    }
+}
+
+void MainWindow::train()
+{
+    ui->trainImagSeekSlider->setValue(trainIndex);
+    Matrix * output(brain->backPropagation(trainingImages[trainIndex], trainingLabels[trainIndex]));
+    trainIndex++;
+    batchIndex++;
+
+    int guess = 0;
+    for(int i = 0; i < output->data.size(); i++){
+        if(output->data[guess][0] < output->data[i][0]) guess = i;
+    }
+    ui->trainGuessLabel->setText("Guess : " + QString::number(guess));
+
+    if(guess == trainingLabels[trainIndex]->data.indexOf({1})){
+        correctTests++;
+    }
+    double acc = double(correctTests)/trainingLabels.size() * 100;
+    ui->trainAccLabel->setText("Training : Epoch["+QString::number(epochIndex)+"]  Batch["+
+                QString::number(trainIndex/brain->batchSize) + "/" +
+                QString::number(trainingLabels.size()/brain->batchSize)+
+                "  Accuracy : " + QString::number(acc,'g',3) + "%  [" +
+                QString::number(correctTests) + "/" +
+                QString::number(trainingLabels.size()) + "]");
+
+    ui->traingingProgressBar->setValue(int(double(trainIndex)/(trainingImages.size()-1) * 100));
+
+
+    if(batchIndex >= brain->batchSize){
+        batchIndex = 0;
+        for(int i = 0; i < brain->weights.size(); i++){
+            // divide the already summed gradients
+            //   and deltas by batchSize to get Average
+            brain->gradients[i]->divide(brain->batchSize);
+            brain->deltas[i]->divide(brain->batchSize);
+
+            // Adjust weights and biases
+            brain->biases[i]->add(brain->gradients[i]);
+            brain->weights[i]->add(brain->deltas[i]);
+        }
+    }
+
+    if(trainIndex >= trainingImages.size()){
+        trainIndex = 0;
+        correctTests = 0;
+        batchIndex = 0;
+        epochIndex++;
+        brain->shuffleVector(trainingImages, trainingLabels);
+        ui->logPTE->appendPlainText(ui->trainAccLabel->text());
+    }
+
+    if(epochIndex < brain->epochs){
+        QTimer::singleShot(ui->trainWaitSpinBox->value(),this,SLOT(train()));
     }
 }
 

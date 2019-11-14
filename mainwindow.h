@@ -28,6 +28,7 @@ public slots:
     void loadData();
     QString setNNFullName();
     void feedImage();
+    void train();
     QString getRandomName(int len);
 
 
@@ -40,6 +41,7 @@ private slots:
 
     void on_saveModelBtn_clicked();
 
+    void on_startTrainingBtn_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -52,6 +54,10 @@ private:
 
     int testIndex = 0;
     int correctTests = 0;
+
+    int epochIndex = 0;
+    int batchIndex = 0;
+    int trainIndex = 0;
 };
 
 #endif // MAINWINDOW_H
