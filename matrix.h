@@ -5,6 +5,7 @@
 #include <QString>
 #include <QDebug>
 #include <math.h>
+#include <QTimer>
 
 class Matrix{
 public:

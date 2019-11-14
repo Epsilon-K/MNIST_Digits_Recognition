@@ -24,12 +24,15 @@ public:
 public slots:
     void viewImage(QVector<Matrix*> vm, int imgIndex, QLabel *label);
     void setImageLabel(QVector<Matrix*> ba, int ind, QLabel *label);
+    void loadStyle();
 
 
 private slots:
     void on_trainImagSeekSlider_valueChanged(int value);
 
     void on_testImgSeekSlider_valueChanged(int value);
+
+    void loadData();
 
 private:
     Ui::MainWindow *ui;
@@ -38,6 +41,7 @@ private:
     QVector<Matrix*> trainingLabels;
     QVector<Matrix*> testingImages;
     QVector<Matrix*> testingLabels;
+    double load = 0;
 };
 
 #endif // MAINWINDOW_H
