@@ -45,9 +45,9 @@ public:
         data = mat->data;
     }
 
-    Matrix (QVector<double> v){
-        for(int i = 0; i < v.size(); i++){
-            data.append(QVector<double>{v[i]});
+    Matrix (QVector<double> *v){
+        for(int i = 0; i < v->size(); i++){
+            data.append(QVector<double>{v->at(i)});
         }
     }
 

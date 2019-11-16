@@ -12,8 +12,47 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->modelNameLineEdit->setText(getRandomName(3));
 
-
     QTimer::singleShot(100,this,SLOT(loadData()));
+
+
+
+    /*  This code is to test if the neural network actually does learn!
+     *  by testing it against XOR problem
+     * TODO: move this to it's seperate function
+
+    brain = new NeuralNetwork("ANN", {2,4,4,1});
+
+        H H
+      X H H Y
+      X H H
+        H H
+
+
+
+    Matrix * inp = new Matrix(2,1);
+    Matrix * tar = new Matrix(1,1);
+
+    int trues = 0;
+    int falses = 0;
+
+    for(int i = 0; i < 50000; i++){
+        inp->data[0][0] = rand()%2;
+        inp->data[1][0] = rand()%2;
+        tar->data[0][0] = uchar(inp->data[0][0]) != uchar(inp->data[1][0]) ? 1 : 0;
+
+        int guess = brain->backPropagation(inp, tar)->data[0][0] >= 0.5 ? 1 : 0;
+
+        if(uchar(guess) == uchar(tar->data[0][0])){
+            qDebug() << "True";
+            trues++;
+        }else{
+            qDebug() << "False";
+            falses++;
+        }
+    }
+
+    qDebug() << trues << "True   Vs   " << falses << "False";
+    */
 }
 
 MainWindow::~MainWindow()
@@ -30,14 +69,15 @@ void MainWindow::loadDataSet(QString path, QVector<Matrix *> &vm, int offset)
       }
 
     QByteArray *ba = new QByteArray(file.readAll());
+    file.close();
     ba->remove(0,offset);
     if(offset == 16){ // loading an images file
         for(int i = 0; i < ba->size()/784; i++){    // number of images
-            QVector<double> v;
+            QVector<double> *v = new QVector<double>;
             for(int j = 0; j < 784; j++){
-                v.append(uchar(ba->at(i*784 + j)));
+                v->append(double(uchar(ba->at(i*784 + j)))/255);
             }
-            Matrix *m = new Matrix(v);
+            Matrix *m = new Matrix(v);  delete v;
             vm.append(m);
             load += 784;
             if(int(load) % 1000 == 0)
@@ -45,28 +85,28 @@ void MainWindow::loadDataSet(QString path, QVector<Matrix *> &vm, int offset)
         }
     }else{  // loading the labels
         for(int i = 0; i < ba->size(); i++){
-            uchar uc = uchar(ba->at(i));
-            QVector<double> v;
+            QVector<double> *v = new QVector<double>;
             for(int j = 0; j < 10; j++){
-                v.append(uchar(j) == uc ? 1 : 0);
+                v->append(uchar(j) == uchar(ba->at(i)) ? 1 : 0);
             }
-            Matrix *m = new Matrix(v);
+            Matrix *m = new Matrix(v); delete v;
             vm.append(m);
             load ++;
             if(int(load) % 1000 == 0)
                 ui->loadingProgressBar->setValue(int(load/54900000 * 100));
         }
     }
+    delete ba;
 }
 
 
-void MainWindow::viewImage(QVector<Matrix *> vm, int imgIndex, QLabel *label)
+void MainWindow::viewImage(QVector<Matrix *> &vm, int imgIndex, QLabel *label)
 {
     // create uchar array
     uchar data[784];
 
     for(int i = 0; i < 784; i++){
-        data[i] = uchar(vm[imgIndex]->data.at(i).at(0));
+        data[i] = uchar(vm.at(imgIndex)->data.at(i).at(0) * 255);
     }
 
     // create QImage & QPixmap
@@ -77,7 +117,7 @@ void MainWindow::viewImage(QVector<Matrix *> vm, int imgIndex, QLabel *label)
     label->setPixmap(pix.scaled(28*5,28*5));
 }
 
-void MainWindow::setImageLabel(QVector<Matrix *> vm, int ind, QLabel *label)
+void MainWindow::setImageLabel(QVector<Matrix *> &vm, int ind, QLabel *label)
 {
     QString str = "image[" + QString::number(ind) + "] Label : ";
     str += QString::number(uchar(vm[ind]->data.indexOf({1})));
@@ -171,11 +211,13 @@ void MainWindow::feedImage()
     for(int i = 0; i < output->data.size(); i++){
         if(output->data[guess][0] < output->data[i][0]) guess = i;
     }
+
     ui->testGuessLabel->setText("Guess : " + QString::number(guess));
 
-    if(guess == testingLabels[testIndex]->data.indexOf({1})){
+    if(int(testingLabels[testIndex]->data[guess][0]) == 1){
         correctTests++;
     }
+
     double acc = double(correctTests)/testingLabels.size() * 100;
     ui->testAccLabel->setText("Testing Accuracy : " + QString::number(acc) + "%  [" +
                               QString::number(correctTests) + "/" +
@@ -218,35 +260,40 @@ void MainWindow::train()
     }
     ui->trainGuessLabel->setText("Guess : " + QString::number(guess));
 
-    if(guess == trainingLabels[trainIndex]->data.indexOf({1})){
+    if(int(trainingLabels[trainIndex]->data[guess][0]) == 1){
         correctTests++;
     }
+
     double acc = double(correctTests)/trainingLabels.size() * 100;
     ui->trainAccLabel->setText("Training : Epoch["+QString::number(epochIndex)+"]  Batch["+
                 QString::number(trainIndex/brain->batchSize) + "/" +
                 QString::number(trainingLabels.size()/brain->batchSize)+
-                "  Accuracy : " + QString::number(acc,'g',3) + "%  [" +
+                "]  Accuracy : " + QString::number(acc,'g',3) + "%  [" +
                 QString::number(correctTests) + "/" +
                 QString::number(trainingLabels.size()) + "]");
 
     ui->traingingProgressBar->setValue(int(double(trainIndex)/(trainingImages.size()-1) * 100));
 
 
-    if(batchIndex >= brain->batchSize){
+    if(batchIndex >= brain->batchSize-1){
         batchIndex = 0;
         for(int i = 0; i < brain->weights.size(); i++){
             // divide the already summed gradients
             //   and deltas by batchSize to get Average
-            brain->gradients[i]->divide(brain->batchSize);
-            brain->deltas[i]->divide(brain->batchSize);
+            //brain->gradients[i]->divide(brain->batchSize);
+            //brain->deltas[i]->divide(brain->batchSize);
 
             // Adjust weights and biases
-            brain->biases[i]->add(brain->gradients[i]);
-            brain->weights[i]->add(brain->deltas[i]);
+            //brain->biases[i]->add(brain->gradients[i]);
+            //brain->weights[i]->add(brain->deltas[i]);
+
+            // reset gradients and deltas?
+            //brain->gradients[i]->multiply(0);
+            //brain->deltas[i]->multiply(0);
         }
     }
 
-    if(trainIndex >= trainingImages.size()){
+    if(trainIndex >= trainingImages.size()-1){
         trainIndex = 0;
         correctTests = 0;
         batchIndex = 0;

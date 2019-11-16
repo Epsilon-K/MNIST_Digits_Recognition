@@ -18,7 +18,7 @@ public:
 
     double learningRate = 0.05;
     int batchSize = 100;
-    int epochs = 1;
+    int epochs = 3;
 
 
     NeuralNetwork(QString _name, QVector<int> _structure, int _batchSize = 100, int _epochs = 1,
@@ -57,7 +57,8 @@ public:
     Matrix* feedForward(Matrix *inputs){
         layers[0]->copy(inputs);
         for(int i = 0; i < weights.size(); i++){
-            layers[i+1]->copy(Matrix::dotProduct(weights[i], layers[i]));
+            Matrix *dp = Matrix::dotProduct(weights[i], layers[i]);
+            layers[i+1]->copy(dp); delete dp;
             layers[i+1]->add(biases[i]);
             // activation
             layers[i+1]->map(Matrix::sigmoid);
@@ -65,10 +66,12 @@ public:
         return layers[layers.size()-1];
     }
 
+    // --------------------------------------------------------------------
     Matrix* backPropagation(Matrix *inputs, Matrix *targets){
         Matrix *outputs = this->feedForward(inputs);
 
         // Calculate error for output layer
+        delete errors[errors.size()-1];
         errors[errors.size()-1] = Matrix::subtract(targets, outputs);
         Matrix *gradient = new Matrix(outputs);
 
@@ -77,23 +80,27 @@ public:
         gradient->multiply(errors[errors.size()-1]);
         gradient->multiply(learningRate);
 
-        gradients[gradients.size()-1]->add(gradient);
-
         //Calculate Delta
         Matrix *lt = Matrix::transpose(layers[layers.size()-2]);
         Matrix *delta = Matrix::dotProduct(gradient,lt);
 
-        deltas[deltas.size()-1]->add(delta);
+        //adjust!!!
+        weights[weights.size()-1]->add(delta);
+        biases[biases.size()-1]->add(gradient);
 
-        //Apply the change to weight
-        //weights[weights.size()-1]->add(delta);
-        //biases[biases.size()-1]->add(gradient);
+        deltas[deltas.size()-1]->add(delta);
+        gradients[gradients.size()-1]->add(gradient);
+
+        delete gradient;
+        delete lt;
+        delete delta;
 
         // Calculate Errors
         for(int i = errors.size()-2; i >= 0; i--){
             //err
             Matrix *wt = Matrix::transpose(weights[i+1]);
-            errors[i]->copy(Matrix::dotProduct(wt,errors[i+1]));
+            Matrix *dp = Matrix::dotProduct(wt,errors[i+1]); delete wt;
+            errors[i]->copy(dp); delete dp;
             //Gradient
             Matrix *lGradient = new Matrix(layers[i+1]);
             lGradient->map(Matrix::dSigmoid);
@@ -103,8 +110,16 @@ public:
             Matrix *tr = Matrix::transpose(layers[i]);
             Matrix *lDelta = Matrix::dotProduct(lGradient, tr);
 
+            // Adjust-NOT
+            weights[i]->add(lDelta);
+            biases[i]->add(lGradient);
+
             gradients[i]->add(lGradient);
             deltas[i]->add(lDelta);
+
+            delete lGradient;
+            delete tr;
+            delete lDelta;
         }
         return outputs;
     }

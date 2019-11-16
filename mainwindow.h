@@ -22,8 +22,8 @@ public:
     void loadDataSet(QString path, QVector<Matrix*> &vm, int offset);
 
 public slots:
-    void viewImage(QVector<Matrix*> vm, int imgIndex, QLabel *label);
-    void setImageLabel(QVector<Matrix*> ba, int ind, QLabel *label);
+    void viewImage(QVector<Matrix *> &vm, int imgIndex, QLabel *label);
+    void setImageLabel(QVector<Matrix *> &vm, int ind, QLabel *label);
     void loadStyle();
     void loadData();
     QString setNNFullName();
