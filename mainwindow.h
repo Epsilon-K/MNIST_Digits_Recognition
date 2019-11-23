@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QImage>
 #include <QPixmap>
+#include <QMessageBox>
 
 namespace Ui {
 class MainWindow;
@@ -42,6 +43,12 @@ private slots:
     void on_saveModelBtn_clicked();
 
     void on_startTrainingBtn_clicked();
+
+    void on_createModelBtn_clicked();
+
+    void on_loadModelSpinBox_clicked();
+
+    void deleteDataLoadingBar();
 
 private:
     Ui::MainWindow *ui;

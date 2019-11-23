@@ -54,6 +54,21 @@ public:
         }
     }
 
+    bool isSameStructure(NeuralNetwork * nn){
+        if(structure.size() == nn->structure.size()){
+            for(int i = 0; i < structure.size(); i++){
+                if(structure[i] != nn->structure[i]) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    void copyWnB(NeuralNetwork * nn){
+        weights = nn->weights;
+        biases = nn->biases;
+    }
+
     Matrix* feedForward(Matrix *inputs){
         layers[0]->copy(inputs);
         for(int i = 0; i < weights.size(); i++){
@@ -85,8 +100,8 @@ public:
         Matrix *delta = Matrix::dotProduct(gradient,lt);
 
         //adjust!!!
-        weights[weights.size()-1]->add(delta);
-        biases[biases.size()-1]->add(gradient);
+        //weights[weights.size()-1]->add(delta);
+        //biases[biases.size()-1]->add(gradient);
 
         deltas[deltas.size()-1]->add(delta);
         gradients[gradients.size()-1]->add(gradient);
@@ -111,8 +126,8 @@ public:
             Matrix *lDelta = Matrix::dotProduct(lGradient, tr);
 
             // Adjust-NOT
-            weights[i]->add(lDelta);
-            biases[i]->add(lGradient);
+            //weights[i]->add(lDelta);
+            //biases[i]->add(lGradient);
 
             gradients[i]->add(lGradient);
             deltas[i]->add(lDelta);
@@ -124,39 +139,6 @@ public:
 
         return outputs;
     }
-
-    /*void training(QVector<Matrix*> inputs, QVector<Matrix*> targets){
-        //01 Run the epoch loop
-        for(int epoch = 0; epoch < epochs; epoch++){
-            //02 Random Shuffle the data
-            shuffleVector(inputs, targets);
-
-            //03 Batch Loop
-            int dataIndex = 0;
-            while(dataIndex < inputs.size()){
-                for(int batch = 0; (batch < batchSize && dataIndex < inputs.size())
-                    ; batch++){
-                    //04 backpropgation
-                    backPropagation(inputs[dataIndex], targets[dataIndex]);
-                    dataIndex++;
-                }
-
-                for(int i = 0; i < weights.size(); i++){
-                    //05 divide the already summed gradients
-                    //   and deltas by batchSize to get Average
-                    gradients[i]->divide(batchSize);
-                    deltas[i]->divide(batchSize);
-
-                    //06 Adjust weights and biases
-                    biases[i]->add(gradients[i]);
-                    weights[i]->add(deltas[i]);
-                }
-            }
-            //07 report cost function after epoch[epoch]
-            // TODO!!!
-        }
-    }
-    */
 
     void shuffleVector(QVector<Matrix *> &vec1, QVector<Matrix *> &vec2){
         for(int i = 0; i < vec1.size(); i++){

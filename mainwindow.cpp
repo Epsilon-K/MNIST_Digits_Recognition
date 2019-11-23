@@ -157,6 +157,7 @@ void MainWindow::loadData()
     // view 1st Training Image & 1st Testing Image
     on_trainImagSeekSlider_valueChanged(0);
     on_testImgSeekSlider_valueChanged(0);
+    QTimer::singleShot(500,this, SLOT(deleteDataLoadingBar()));
 }
 
 
@@ -174,22 +175,13 @@ void MainWindow::on_testNNBtn_clicked()
 
 void MainWindow::on_saveModelBtn_clicked()
 {
-    QString name = ui->modelNameLineEdit->text();
-    QVector<int> structure;
-    QStringList ls = ui->nnStructLineEdit->text().split(", ",QString::SkipEmptyParts);
-    for(int i = 0; i < ls.size(); i++) structure.append(ls[i].toInt());
-
-
-    brain = new NeuralNetwork(name, structure, ui->batchSizeSpinBox->value(),
-                              ui->epochsSpinBox->value(),
-                              ui->lrSpinBox->value());
-    setNNFullName();
+    // save to disk!!
 }
 
 QString MainWindow::setNNFullName()
 {
     QString str = brain->name;
-    str += " NN{";
+    str += " {";
     for(int i = 0; i < brain->structure.size(); i++){
         str += QString::number(brain->structure[i]);
         if(i < brain->structure.size()-1) str += ", ";
@@ -258,9 +250,10 @@ void MainWindow::train()
     correctTests += int(trainingLabels[trainIndex]->data[guess][0]);
 
     double acc = double(correctTests)/trainingLabels.size() * 100;
-    ui->trainAccLabel->setText("Training : Epoch["+QString::number(epochIndex)+"]  Batch["+
+    ui->trainAccLabel->setText("Training : Epoch["+QString::number(epochIndex)+"/"+
+                QString::number(brain->epochs) + "]  Batch["+
                 QString::number(trainIndex/brain->batchSize) + "/" +
-                QString::number(trainingLabels.size()/brain->batchSize)+
+                QString::number(trainingLabels.size()/brain->batchSize - 1)+
                 "]  Accuracy : " + QString::number(acc,'g',3) + "%  [" +
                 QString::number(correctTests) + "/" +
                 QString::number(trainingLabels.size()) + "]");
@@ -276,16 +269,16 @@ void MainWindow::train()
         for(int i = 0; i < brain->weights.size(); i++){
             // divide the already summed gradients
             //   and deltas by batchSize to get Average
-            //brain->gradients[i]->divide(brain->batchSize);
-            //brain->deltas[i]->divide(brain->batchSize);
+            brain->gradients[i]->divide(brain->batchSize);
+            brain->deltas[i]->divide(brain->batchSize);
 
             // Adjust weights and biases
-            //brain->biases[i]->add(brain->gradients[i]);
-            //brain->weights[i]->add(brain->deltas[i]);
+            brain->biases[i]->add(brain->gradients[i]);
+            brain->weights[i]->add(brain->deltas[i]);
 
             // reset gradients and deltas?
-            //brain->gradients[i]->multiply(0);
-            //brain->deltas[i]->multiply(0);
+            brain->gradients[i]->multiply(0);
+            brain->deltas[i]->multiply(0);
         }
     }
 
@@ -310,4 +303,55 @@ QString MainWindow::getRandomName(int len)
         str += char(rand()%26 + 65);
     }
     return  str;
+}
+
+void MainWindow::on_createModelBtn_clicked()
+{
+    QString name = ui->modelNameLineEdit->text();
+    QVector<int> structure;
+    QStringList ls = ui->nnStructLineEdit->text().split(", ",QString::SkipEmptyParts);
+    for(int i = 0; i < ls.size(); i++) structure.append(ls[i].toInt());
+
+
+    NeuralNetwork * newBrain = new NeuralNetwork(name, structure, ui->batchSizeSpinBox->value(),
+                              ui->epochsSpinBox->value(),
+                              ui->lrSpinBox->value());
+
+    if(ui->modelLabel->text() != "Model : undefined"){   // is there an old NN?
+        if(brain->isSameStructure(newBrain)){  // is it the same structure?
+            // copy weights and biases?
+            QMessageBox * mb = new QMessageBox(this);
+            mb->setText("New Neural Network");
+            mb->setInformativeText("Copy Weights and Biases to new Network?");
+            mb->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+            mb->setDefaultButton(QMessageBox::Yes);
+            switch (mb->exec()) {
+            case QMessageBox::Yes :
+                newBrain->copyWnB(brain);
+            break;
+            case QMessageBox::No :
+                // move on
+            break;
+            case QMessageBox::Cancel :
+            default:
+                return;
+            }
+        }
+        delete brain;
+    }
+
+    brain = newBrain;
+
+    setNNFullName();
+}
+
+void MainWindow::on_loadModelSpinBox_clicked()
+{
+
+}
+
+void MainWindow::deleteDataLoadingBar()
+{
+    ui->loadingLabel->deleteLater();
+    ui->loadingProgressBar->deleteLater();
 }
