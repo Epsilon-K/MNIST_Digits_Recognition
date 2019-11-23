@@ -211,15 +211,12 @@ void MainWindow::feedImage()
     for(int i = 0; i < output->data.size(); i++){
         if(output->data[guess][0] < output->data[i][0]) guess = i;
     }
-
     ui->testGuessLabel->setText("Guess : " + QString::number(guess));
 
-    if(int(testingLabels[testIndex]->data[guess][0]) == 1){
-        correctTests++;
-    }
+    correctTests += int(testingLabels[testIndex]->data[guess][0]);
 
     double acc = double(correctTests)/testingLabels.size() * 100;
-    ui->testAccLabel->setText("Testing Accuracy : " + QString::number(acc) + "%  [" +
+    ui->testAccLabel->setText("Testing Accuracy : " + QString::number(acc,'g',3) + "%  [" +
                               QString::number(correctTests) + "/" +
                               QString::number(testingLabels.size()) + "]");
 
@@ -251,8 +248,6 @@ void MainWindow::train()
 {
     ui->trainImagSeekSlider->setValue(trainIndex);
     Matrix * output(brain->backPropagation(trainingImages[trainIndex], trainingLabels[trainIndex]));
-    trainIndex++;
-    batchIndex++;
 
     int guess = 0;
     for(int i = 0; i < output->data.size(); i++){
@@ -260,9 +255,7 @@ void MainWindow::train()
     }
     ui->trainGuessLabel->setText("Guess : " + QString::number(guess));
 
-    if(int(trainingLabels[trainIndex]->data[guess][0]) == 1){
-        correctTests++;
-    }
+    correctTests += int(trainingLabels[trainIndex]->data[guess][0]);
 
     double acc = double(correctTests)/trainingLabels.size() * 100;
     ui->trainAccLabel->setText("Training : Epoch["+QString::number(epochIndex)+"]  Batch["+
@@ -274,6 +267,9 @@ void MainWindow::train()
 
     ui->traingingProgressBar->setValue(int(double(trainIndex)/(trainingImages.size()-1) * 100));
 
+
+    trainIndex++;
+    batchIndex++;
 
     if(batchIndex >= brain->batchSize-1){
         batchIndex = 0;

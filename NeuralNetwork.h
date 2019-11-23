@@ -121,6 +121,7 @@ public:
             delete tr;
             delete lDelta;
         }
+
         return outputs;
     }
 
@@ -157,13 +158,13 @@ public:
     }
     */
 
-    void shuffleVector(QVector<Matrix *> &vec, QVector<Matrix *> &vec2){
-        for(int i = 0; i < vec.size(); i++){
-            int r = rand()%vec.size();
+    void shuffleVector(QVector<Matrix *> &vec1, QVector<Matrix *> &vec2){
+        for(int i = 0; i < vec1.size(); i++){
+            int r = rand()%vec1.size();
 
-            Matrix * t = vec.at(i);
-            vec[i] = vec.at(r);
-            vec[r] = t;
+            Matrix * t = vec1.at(i);
+            vec1[i] = vec1.at(r);
+            vec1[r] = t;
 
             Matrix * t2 = vec2.at(i);
             vec2[i] = vec2.at(r);
