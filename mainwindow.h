@@ -8,6 +8,9 @@
 #include <QImage>
 #include <QPixmap>
 #include <QMessageBox>
+#include <QRegularExpression>
+#include <QFileDialog>
+#include <QTime>
 
 namespace Ui {
 class MainWindow;
@@ -31,6 +34,7 @@ public slots:
     void feedImage();
     void train();
     QString getRandomName(int len);
+    void save();
 
 
 private slots:
@@ -50,6 +54,8 @@ private slots:
 
     void deleteDataLoadingBar();
 
+    void on_checkBox_toggled(bool checked);
+
 private:
     Ui::MainWindow *ui;
     NeuralNetwork *brain;
@@ -65,6 +71,9 @@ private:
     int epochIndex = 0;
     int batchIndex = 0;
     int trainIndex = 0;
+
+    bool realTime;
+    QTime tiem;
 };
 
 #endif // MAINWINDOW_H

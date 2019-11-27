@@ -7,13 +7,12 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     loadStyle();
-    showMaximized();
     srand(time(0));
 
     ui->modelNameLineEdit->setText(getRandomName(3));
+    realTime = ui->checkBox->isChecked();
 
-    QTimer::singleShot(100,this,SLOT(loadData()));
-
+    QTimer::singleShot(200,this,SLOT(loadData()));
 
 
     /*  This code is to test if the neural network actually does learn!
@@ -157,7 +156,8 @@ void MainWindow::loadData()
     // view 1st Training Image & 1st Testing Image
     on_trainImagSeekSlider_valueChanged(0);
     on_testImgSeekSlider_valueChanged(0);
-    QTimer::singleShot(500,this, SLOT(deleteDataLoadingBar()));
+    deleteDataLoadingBar();
+    QTimer::singleShot(20,this,SLOT(showMaximized()));
 }
 
 
@@ -176,6 +176,11 @@ void MainWindow::on_testNNBtn_clicked()
 void MainWindow::on_saveModelBtn_clicked()
 {
     // save to disk!!
+    QString fileName = QFileDialog::getSaveFileName
+            (this, "Save ANN Model", QDir::currentPath(),
+            "Artificial Neural Network file (*.ann)");
+    brain->path = fileName;
+    save();
 }
 
 QString MainWindow::setNNFullName()
@@ -229,6 +234,10 @@ void MainWindow::on_startTrainingBtn_clicked()
         trainIndex = 0;
         correctTests = 0;
         brain->shuffleVector(trainingImages, trainingLabels);
+        tiem.start();
+        ui->logPTE->appendPlainText("Starting Epoch[1/" + QString::number(brain->epochs)
+                                    + "] at : " + tiem.currentTime().toString());
+
         QTimer::singleShot(ui->trainWaitSpinBox->value(),this,SLOT(train()));
     }else{
         ui->logPTE->appendPlainText("Warning : No Neural Network Model Configured!");
@@ -238,7 +247,7 @@ void MainWindow::on_startTrainingBtn_clicked()
 
 void MainWindow::train()
 {
-    ui->trainImagSeekSlider->setValue(trainIndex);
+    if(realTime) ui->trainImagSeekSlider->setValue(trainIndex);
     Matrix * output(brain->backPropagation(trainingImages[trainIndex], trainingLabels[trainIndex]));
 
     int guess = 0;
@@ -250,10 +259,10 @@ void MainWindow::train()
     correctTests += int(trainingLabels[trainIndex]->data[guess][0]);
 
     double acc = double(correctTests)/trainingLabels.size() * 100;
-    ui->trainAccLabel->setText("Training : Epoch["+QString::number(epochIndex)+"/"+
+    ui->trainAccLabel->setText("Training : Epoch["+QString::number(epochIndex+1)+"/"+
                 QString::number(brain->epochs) + "]  Batch["+
-                QString::number(trainIndex/brain->batchSize) + "/" +
-                QString::number(trainingLabels.size()/brain->batchSize - 1)+
+                QString::number((trainIndex/brain->batchSize) + 1) + "/" +
+                QString::number(trainingLabels.size()/brain->batchSize)+
                 "]  Accuracy : " + QString::number(acc,'g',3) + "%  [" +
                 QString::number(correctTests) + "/" +
                 QString::number(trainingLabels.size()) + "]");
@@ -289,6 +298,10 @@ void MainWindow::train()
         epochIndex++;
         brain->shuffleVector(trainingImages, trainingLabels);
         ui->logPTE->appendPlainText(ui->trainAccLabel->text());
+        ui->logPTE->appendPlainText("Epoch[" +QString::number(epochIndex) + "/" +
+        QString::number(brain->epochs) + "] Ended at : " + tiem.currentTime().toString() +
+        "   -   elapsed time : " + QString::number(double(tiem.restart())/1000/60, 'g', 3) + " minutes");
+        save();
     }
 
     if(epochIndex < brain->epochs){
@@ -305,6 +318,19 @@ QString MainWindow::getRandomName(int len)
     return  str;
 }
 
+void MainWindow::save()
+{
+    QFile file(brain->path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        ui->logPTE->appendPlainText("Cannot write to file : " + brain->path);
+        return;
+    }
+
+    QTextStream out(&file);
+    out << brain->toString();
+    file.close();
+}
+
 void MainWindow::on_createModelBtn_clicked()
 {
     QString name = ui->modelNameLineEdit->text();
@@ -312,8 +338,11 @@ void MainWindow::on_createModelBtn_clicked()
     QStringList ls = ui->nnStructLineEdit->text().split(", ",QString::SkipEmptyParts);
     for(int i = 0; i < ls.size(); i++) structure.append(ls[i].toInt());
 
+    QString fileName = QFileDialog::getSaveFileName
+            (this, "Save ANN Model", QDir::currentPath(),
+            "Artificial Neural Network file (*.ann)");
 
-    NeuralNetwork * newBrain = new NeuralNetwork(name, structure, ui->batchSizeSpinBox->value(),
+    NeuralNetwork * newBrain = new NeuralNetwork(fileName, name, structure, ui->batchSizeSpinBox->value(),
                               ui->epochsSpinBox->value(),
                               ui->lrSpinBox->value());
 
@@ -341,17 +370,55 @@ void MainWindow::on_createModelBtn_clicked()
     }
 
     brain = newBrain;
-
+    save();
     setNNFullName();
 }
 
 void MainWindow::on_loadModelSpinBox_clicked()
 {
+    QString fileName = QFileDialog::getOpenFileName(this,
+          "Open ANN file", QDir::currentPath(), "Artificial Neural Network file (*.ann)");
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        ui->logPTE->appendPlainText("can't open file : " + fileName);
+        return;
+    }
 
+    NeuralNetwork * newBrain = NeuralNetwork::fromString(file.readAll());
+    if(ui->modelLabel->text() != "Model : undefined"){   // is there an old NN?
+        if(brain->isSameStructure(newBrain)){  // is it the same structure?
+            // copy weights and biases?
+            QMessageBox * mb = new QMessageBox(this);
+            mb->setText("New Neural Network");
+            mb->setInformativeText("Copy Weights and Biases to new Network?");
+            mb->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+            mb->setDefaultButton(QMessageBox::Yes);
+            switch (mb->exec()) {
+            case QMessageBox::Yes :
+                newBrain->copyWnB(brain);
+            break;
+            case QMessageBox::No :
+                // move on
+            break;
+            case QMessageBox::Cancel :
+            default:
+                return;
+            }
+        }
+        delete brain;
+    }
+
+    brain = newBrain;
+    setNNFullName();
 }
 
 void MainWindow::deleteDataLoadingBar()
 {
     ui->loadingLabel->deleteLater();
     ui->loadingProgressBar->deleteLater();
+}
+
+void MainWindow::on_checkBox_toggled(bool checked)
+{
+    realTime = checked;
 }

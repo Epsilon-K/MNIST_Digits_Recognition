@@ -115,27 +115,31 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label">
-              <property name="text">
-               <string>Seek : </string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSlider" name="trainImagSeekSlider">
-              <property name="minimum">
-               <number>0</number>
-              </property>
-              <property name="maximum">
-               <number>59999</number>
-              </property>
-              <property name="value">
-               <number>0</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0">
+              <item>
+               <widget class="QLabel" name="label">
+                <property name="text">
+                 <string>Seek : </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSlider" name="trainImagSeekSlider">
+                <property name="minimum">
+                 <number>0</number>
+                </property>
+                <property name="maximum">
+                 <number>59999</number>
+                </property>
+                <property name="value">
+                 <number>0</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <spacer name="verticalSpacer">
@@ -331,7 +335,17 @@
                  <number>1000</number>
                 </property>
                 <property name="value">
-                 <number>3</number>
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="checkBox">
+                <property name="text">
+                 <string>real time view</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -386,7 +400,7 @@
            </layout>
           </widget>
           <widget class="QWidget" name="layoutWidget_2">
-           <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0,0,0,0">
+           <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0,0,0">
             <item>
              <widget class="QLabel" name="testImgLabel">
               <property name="font">
@@ -440,21 +454,25 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>Seek : </string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSlider" name="testImgSeekSlider">
-              <property name="maximum">
-               <number>9999</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_12">
+              <item>
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>Seek : </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSlider" name="testImgSeekSlider">
+                <property name="maximum">
+                 <number>9999</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_9">
@@ -487,7 +505,7 @@
                  <number>1000</number>
                 </property>
                 <property name="value">
-                 <number>5</number>
+                 <number>1</number>
                 </property>
                </widget>
               </item>

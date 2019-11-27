@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <math.h>
 #include <QTimer>
+#include <QTextStream>
 
 class Matrix{
 public:
@@ -186,18 +187,14 @@ public:
     }
 
     QString toString(){
-        QString str = "[";
+        QString str;
         for(int i = 0; i < rows(); i++){
-            if(i > 0) str += " ";
-            str += "[";
             for(int j = 0; j < cols(); j++){
                 str += QString::number(data[i][j]);
-                if(j < cols()-1) str += ", ";
+                if(j < cols()-1) str += " ";
             }
-            str += "]";
-            if(i < rows()-1) str += "\n";
+            str += "\n";
         }
-        str+= "]";
         return str;
     }
 
