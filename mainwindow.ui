@@ -182,7 +182,7 @@
                  <item>
                   <widget class="QPushButton" name="createModelBtn">
                    <property name="text">
-                    <string>Create Mode</string>
+                    <string>Create Model</string>
                    </property>
                   </widget>
                  </item>

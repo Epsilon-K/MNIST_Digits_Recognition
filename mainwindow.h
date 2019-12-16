@@ -23,11 +23,11 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void loadDataSet(QString path, QVector<Matrix*> &vm, int offset);
+    void loadDataSet(QString path, QVector<QVector<uchar>> &data, int offset);
 
 public slots:
-    void viewImage(QVector<Matrix *> &vm, int imgIndex, QLabel *label);
-    void setImageLabel(QVector<Matrix *> &vm, int ind, QLabel *label);
+    void viewImage(QVector<QVector<uchar> > &data, int imgIndex, QLabel *label);
+    void setImageLabel(QVector<QVector<uchar>> &data, int ind, QLabel *label);
     void loadStyle();
     void loadData();
     QString setNNFullName();
@@ -35,6 +35,7 @@ public slots:
     void train();
     QString getRandomName(int len);
     void save();
+    void proof();
 
 
 private slots:
@@ -59,10 +60,10 @@ private slots:
 private:
     Ui::MainWindow *ui;
     NeuralNetwork *brain;
-    QVector<Matrix*> trainingImages;
-    QVector<Matrix*> trainingLabels;
-    QVector<Matrix*> testingImages;
-    QVector<Matrix*> testingLabels;
+    QVector<QVector<uchar>> trainingImages;
+    QVector<QVector<uchar>> trainingLabels;
+    QVector<QVector<uchar>> testingImages;
+    QVector<QVector<uchar>> testingLabels;
     double load = 0;
 
     int testIndex = 0;

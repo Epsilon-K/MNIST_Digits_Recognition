@@ -142,15 +142,16 @@ public:
         return outputs;
     }
 
-    void shuffleVector(QVector<Matrix *> &vec1, QVector<Matrix *> &vec2){
+    template< typename T >
+    void shuffleVector(QVector<T> &vec1, QVector<T> &vec2){
         for(int i = 0; i < vec1.size(); i++){
             int r = rand()%vec1.size();
 
-            Matrix * t = vec1.at(i);
+            T t = vec1.at(i);
             vec1[i] = vec1.at(r);
             vec1[r] = t;
 
-            Matrix * t2 = vec2.at(i);
+            T t2 = vec2.at(i);
             vec2[i] = vec2.at(r);
             vec2[r] = t2;
         }

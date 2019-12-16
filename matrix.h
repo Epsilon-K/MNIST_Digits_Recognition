@@ -52,6 +52,12 @@ public:
         }
     }
 
+    Matrix (QVector<uchar> &v){
+        for(int i = 0; i < v.size(); i++){
+            data.append(QVector<double>{double(v.at(i))});
+        }
+    }
+
 
 
     void add(double n){

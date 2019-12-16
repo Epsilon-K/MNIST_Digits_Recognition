@@ -11,47 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->modelNameLineEdit->setText(getRandomName(3));
     realTime = ui->checkBox->isChecked();
-
     QTimer::singleShot(200,this,SLOT(loadData()));
-
-
-    /*  This code is to test if the neural network actually does learn!
-     *  by testing it against XOR problem
-     * TODO: move this to it's seperate function
-
-    brain = new NeuralNetwork("ANN", {2,4,4,1});
-
-        H H
-      X H H Y
-      X H H
-        H H
-
-
-
-    Matrix * inp = new Matrix(2,1);
-    Matrix * tar = new Matrix(1,1);
-
-    int trues = 0;
-    int falses = 0;
-
-    for(int i = 0; i < 50000; i++){
-        inp->data[0][0] = rand()%2;
-        inp->data[1][0] = rand()%2;
-        tar->data[0][0] = uchar(inp->data[0][0]) != uchar(inp->data[1][0]) ? 1 : 0;
-
-        int guess = brain->backPropagation(inp, tar)->data[0][0] >= 0.5 ? 1 : 0;
-
-        if(uchar(guess) == uchar(tar->data[0][0])){
-            qDebug() << "True";
-            trues++;
-        }else{
-            qDebug() << "False";
-            falses++;
-        }
-    }
-
-    qDebug() << trues << "True   Vs   " << falses << "False";
-    */
 }
 
 MainWindow::~MainWindow()
@@ -59,7 +19,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::loadDataSet(QString path, QVector<Matrix *> &vm, int offset)
+void MainWindow::loadDataSet(QString path, QVector<QVector<uchar>> &data, int offset)
 {
     QFile file(path);
       if (!file.open(QIODevice::ReadOnly)){
@@ -72,54 +32,45 @@ void MainWindow::loadDataSet(QString path, QVector<Matrix *> &vm, int offset)
     ba->remove(0,offset);
     if(offset == 16){ // loading an images file
         for(int i = 0; i < ba->size()/784; i++){    // number of images
-            QVector<double> *v = new QVector<double>;
+            QVector<uchar> img;
             for(int j = 0; j < 784; j++){
-                v->append(double(uchar(ba->at(i*784 + j)))/255);
+                img.append(uchar(ba->at(i*784 + j)));
             }
-            Matrix *m = new Matrix(v);  delete v;
-            vm.append(m);
+            data.append(img);
             load += 784;
             if(int(load) % 1000 == 0)
-                ui->loadingProgressBar->setValue(int(load/54900000 * 100));
+                ui->loadingProgressBar->setValue(int(load/54950000 * 100));
         }
     }else{  // loading the labels
         for(int i = 0; i < ba->size(); i++){
-            QVector<double> *v = new QVector<double>;
+            QVector<uchar> lbl;
             for(int j = 0; j < 10; j++){
-                v->append(uchar(j) == uchar(ba->at(i)) ? 1 : 0);
+                lbl.append(uchar(ba->at(i)));
             }
-            Matrix *m = new Matrix(v); delete v;
-            vm.append(m);
+            data.append(lbl);
             load ++;
             if(int(load) % 1000 == 0)
-                ui->loadingProgressBar->setValue(int(load/54900000 * 100));
+                ui->loadingProgressBar->setValue(int(load/54950000 * 100));
         }
     }
     delete ba;
 }
 
 
-void MainWindow::viewImage(QVector<Matrix *> &vm, int imgIndex, QLabel *label)
+void MainWindow::viewImage(QVector<QVector<uchar>> &data, int imgIndex, QLabel *label)
 {
-    // create uchar array
-    uchar data[784];
-
-    for(int i = 0; i < 784; i++){
-        data[i] = uchar(vm.at(imgIndex)->data.at(i).at(0) * 255);
-    }
-
     // create QImage & QPixmap
-    QImage img(data, 28, 28, QImage::Format_Grayscale8);
+    QImage img(data[imgIndex].data(), 28, 28, QImage::Format_Grayscale8);
     QPixmap pix = QPixmap::fromImage(img);
 
     // send to view on the Label
     label->setPixmap(pix.scaled(28*5,28*5));
 }
 
-void MainWindow::setImageLabel(QVector<Matrix *> &vm, int ind, QLabel *label)
+void MainWindow::setImageLabel(QVector<QVector<uchar>> &data, int ind, QLabel *label)
 {
     QString str = "image[" + QString::number(ind) + "] Label : ";
-    str += QString::number(uchar(vm[ind]->data.indexOf({1})));
+    str += QString::number(data[ind][0]);
     label->setText(str);
 }
 
@@ -202,7 +153,9 @@ QString MainWindow::setNNFullName()
 void MainWindow::feedImage()
 {
     ui->testImgSeekSlider->setValue(testIndex);
-    Matrix * output(brain->feedForward(testingImages[testIndex]));
+    Matrix *input = new Matrix(testingImages[testIndex]);
+    input->divide(255); // normalize;
+    Matrix * output(brain->feedForward(input)); delete input;
 
     int guess = 0;
     for(int i = 0; i < output->data.size(); i++){
@@ -210,7 +163,7 @@ void MainWindow::feedImage()
     }
     ui->testGuessLabel->setText("Guess : " + QString::number(guess));
 
-    correctTests += int(testingLabels[testIndex]->data[guess][0]);
+    correctTests += guess == testingLabels.at(testIndex).at(0) ? 1 : 0;
 
     double acc = double(correctTests)/testingLabels.size() * 100;
     ui->testAccLabel->setText("Testing Accuracy : " + QString::number(acc,'g',3) + "%  [" +
@@ -248,7 +201,11 @@ void MainWindow::on_startTrainingBtn_clicked()
 void MainWindow::train()
 {
     if(realTime) ui->trainImagSeekSlider->setValue(trainIndex);
-    Matrix * output(brain->backPropagation(trainingImages[trainIndex], trainingLabels[trainIndex]));
+    Matrix *input = new Matrix(trainingImages[trainIndex]);
+    input->divide(255); // normalize;
+    Matrix * targets = new Matrix(10,1);
+    for(int i = 0; i < 10; i++){targets->data[i][0] = i == int(trainingLabels[trainIndex][0]) ? 1 : 0;}
+    Matrix * output(brain->backPropagation(input, targets)); delete input; delete targets;
 
     int guess = 0;
     for(int i = 0; i < output->data.size(); i++){
@@ -256,7 +213,7 @@ void MainWindow::train()
     }
     ui->trainGuessLabel->setText("Guess : " + QString::number(guess));
 
-    correctTests += int(trainingLabels[trainIndex]->data[guess][0]);
+    correctTests += guess == trainingLabels.at(trainIndex).at(0) ? 1 : 0;
 
     double acc = double(correctTests)/trainingLabels.size() * 100;
     ui->trainAccLabel->setText("Training : Epoch["+QString::number(epochIndex+1)+"/"+
@@ -329,6 +286,42 @@ void MainWindow::save()
     QTextStream out(&file);
     out << brain->toString();
     file.close();
+}
+
+void MainWindow::proof()
+{
+    /*  This code is to test if the neural network actually does learn!
+     *  by testing it against XOR problem
+     */
+
+    NeuralNetwork *br = new NeuralNetwork(QDir::currentPath(), "ANN", {2,4,4,1});
+
+    Matrix * inp = new Matrix(2,1);
+    Matrix * tar = new Matrix(1,1);
+
+    int trues = 0;
+    int falses = 0;
+
+    for(int i = 0; i < 50000; i++){
+        inp->data[0][0] = rand()%2;
+        inp->data[1][0] = rand()%2;
+        tar->data[0][0] = uchar(inp->data[0][0]) != uchar(inp->data[1][0]) ? 1 : 0;
+
+        int guess = br->backPropagation(inp, tar)->data[0][0] >= 0.5 ? 1 : 0;
+
+        if(uchar(guess) == uchar(tar->data[0][0])){
+            qDebug() << "True";
+            trues++;
+        }else{
+            qDebug() << "False";
+            falses++;
+        }
+    }
+
+    qDebug() << trues << "True   Vs   " << falses << "False";
+    delete br;
+    delete inp;
+    delete tar;
 }
 
 void MainWindow::on_createModelBtn_clicked()
